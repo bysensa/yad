@@ -3,6 +3,10 @@ description: Yet another day application
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 0.0.1
 
+scripts:
+  gen: flutter pub run build_runner build
+  monarch: monarch run
+
 environment:
   sdk: '>=2.18.2 <3.0.0'
 
@@ -20,6 +24,10 @@ dependencies:
   oxidized: ^5.2.0
   managed: ^1.0.0
   componentt: ^0.1.0
+  async: ^2.9.0
+  window_manager: ^0.2.8
+  desktop_multi_window: ^0.2.0
+
 
 dev_dependencies:
   flutter_test:
@@ -28,6 +36,8 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   isar_generator: *isar_version
   build_runner: ^2.3.3
+  monarch: ^3.0.0
+
 
 flutter:
   uses-material-design: true

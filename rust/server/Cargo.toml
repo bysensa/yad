@@ -1,0 +1,33 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+surrealdb = "1.0.0-beta.8"
+entrait = { version = "0.5", features = ["use-boxed-futures", "unimock"]  }
+thiserror = "1.0"
+anyhow = "1.0"
+serde = "1.0"
+serde_with = { version="2.1.0", features=["chrono"] }
+serde_json = "1.0"
+async-trait = "0.1"
+tokio = { version = "1.24.1", features = ["macros","rt",] }
+uriparse = "0.6.4"
+chrono = {version = "0.4.23", features=["serde"]}
+chrono-tz = "0.8.1"
+rrule = "0.10.0"
+semver = "1.0"
+language-tags = "0.3.2"
+geo = "0.23.1"
+nanoid = "0.4.0"
+salvo = {version = "0.37.9", features = ["affix"] }
+jsonrpsee = {version = "0.16.2", features=["server-core", "macros"]}
+futures-util = "0.3.25"
+trait-enumizer = { version = "0.1.1", features = ["tokio"] }
+
+
+
+[dev-dependencies]
