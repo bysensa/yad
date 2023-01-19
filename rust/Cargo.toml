@@ -2,7 +2,9 @@
 members = [
     "core",
     "server",
-    "mac_watcher"
+    "yad_mac_observer",
+    "yad_mac_agent",
+    "yad_tracking_scope"
 ]
 
 

@@ -1,0 +1,15 @@
+[package]
+name = "yad-mac-agent"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1"
+cacao = "0.3.2"
+async-std = { version = "1", features=["tokio1"] }
+salvo = "0.37"
+yad-mac-observer = { path = "../yad_mac_observer" }
+lazy_static = "1.4"
+flume = "0.10"
