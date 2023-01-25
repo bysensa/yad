@@ -1,19 +1,23 @@
-use entrait::entrait;
+use entrait::entrait_export;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::ops::Deref;
+use std::sync::Arc;
 use std::time::Duration;
-use surrealdb::sql::{parse, Id, Query as SurrealQuery};
 use surrealdb::sql::Value;
+use surrealdb::sql::{parse, Id, Query as SurrealQuery};
 use surrealdb::{Datastore, Session};
 use thiserror::Error;
 
+use crate::repository::Repository;
+
 #[cfg(test)]
 mod tests {
-    use crate::db::database::Query;
+    use crate::database::Query;
 
     use super::Database;
 
-    #[tokio::test]
+    #[async_std::test]
     async fn open_db_test() {
         let db = Database::new("memory", None, None).await;
         assert_eq!(db.is_ok(), true);
@@ -25,7 +29,7 @@ mod tests {
         assert_eq!(query.is_ok(), true);
     }
 
-    #[tokio::test]
+    #[async_std::test]
     async fn execute_raw_test() {
         let db = Database::new("memory", None, None).await.unwrap();
         let query: Query = "select * from test".into();
@@ -34,7 +38,7 @@ mod tests {
         dbg!(_res);
     }
 
-    #[tokio::test]
+    #[async_std::test]
     async fn execute_query_test() {
         let query = Database::prepare("select * from test").unwrap();
         let db = Database::new("memory", None, None).await.unwrap();
@@ -43,7 +47,7 @@ mod tests {
     }
 }
 
-#[entrait(pub GetDb)]
+#[entrait_export(pub GetDb)]
 pub fn get_db(db: &Database) -> &Database {
     db
 }
@@ -58,15 +62,31 @@ pub enum DatabaseError {
     QueryPrepareError(#[source] surrealdb::Error),
     #[error("Database query internal error")]
     InternalQueryError(#[source] surrealdb::Error),
+    #[error("Database transaction create error")]
+    CreateTransactionError(#[source] surrealdb::Error),
+    #[error("Database transaction commit failed")]
+    CommitError(#[source] surrealdb::Error),
+    #[error("Database transaction rollback failed")]
+    RollbackError(#[source] surrealdb::Error),
+    #[error("Database repository creation failed {0}")]
+    RepositoryCreateFailed(String),
+
 }
 
 pub type Variables = Option<BTreeMap<String, Value>>;
 pub type QueryResult = Result<Vec<Response>, DatabaseError>;
 pub type PrepareResult = Result<Query, DatabaseError>;
 
+#[derive(Clone)]
 pub struct Database {
-    ds: Datastore,
+    ds: Arc<Datastore>,
     ses: Session,
+}
+
+impl std::fmt::Debug for Database {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Database").field("ses", &self.ses).finish()
+    }
 }
 
 impl Database {
@@ -81,7 +101,7 @@ impl Database {
         ses.rt = true;
         return Datastore::new(path)
             .await
-            .map(|ds| Database { ds, ses })
+            .map(|ds| Database { ds: Arc::new(ds), ses })
             .map_err(|err| DatabaseError::OpenError(err));
     }
 
@@ -115,6 +135,10 @@ impl Database {
     pub fn next_id() -> Id {
         Id::rand()
     }
+
+    pub fn repository(&self) -> Repository {
+        Repository::new(self.clone())
+    }
 }
 
 #[derive(Debug)]
@@ -124,8 +148,20 @@ pub enum Query {
 }
 
 impl From<&str> for Query {
-    fn from<'a>(value: &'a str) -> Self {
+    fn from(value: &str) -> Self {
         Query::Raw(value.into())
+    }
+}
+
+pub struct Transaction(surrealdb::Transaction);
+
+impl Transaction {
+    pub async fn commit(&mut self) -> Result<(), DatabaseError> {
+        self.0.commit().await.map_err(|err| DatabaseError::CommitError(err))
+    }
+
+    pub async fn rollback(&mut self) -> Result<(), DatabaseError>  {
+        self.0.cancel().await.map_err(|err| DatabaseError::RollbackError(err))
     }
 }
 

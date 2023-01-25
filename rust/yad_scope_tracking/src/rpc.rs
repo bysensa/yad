@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use entrait::Impl;
 use jsonrpsee::core::*;
 use jsonrpsee::proc_macros::rpc;
 use jsonrpsee::RpcModule;
@@ -6,32 +7,11 @@ use salvo::prelude::*;
 use std::sync::Arc;
 use yad_net::rpc::RpcReply;
 
-#[cfg(test)]
-mod tests {
-    use crate::net::router;
-    use salvo::prelude::*;
+use crate::ScopeState;
 
-    #[async_std::test]
-    async fn handle_rpc_test() {
-        let addr = "127.0.0.1:7878";
-        let route = router();
-        async_std::task::spawn(Server::new(TcpListener::bind(addr)).serve(route));
-
-        let client = reqwest::Client::new();
-        let res = client
-            .post("http://127.0.0.1:7878/tracking")
-            .body(r#"{"jsonrpc": "2.0", "method": "tracking_bar", "params": [42, 23], "id": 1}"#)
-            .send()
-            .await
-            .unwrap()
-            .text()
-            .await;
-        dbg!(&res);
-    }
-}
 
 #[handler]
-async fn rpc_handler(req: &mut Request, res: &mut Response, depot: &mut Depot) {
+pub async fn rpc_handler(req: &mut Request, res: &mut Response, depot: &mut Depot) {
     let module = depot.obtain::<Arc<YadTrackingRpcModule>>();
     yad_net::rpc::handler(module, req, res).await;
 }
@@ -57,9 +37,15 @@ pub trait YadTrackingRpc<T: RpcReply> {
 }
 
 #[derive(Debug)]
-pub struct YadTrackingRpcContext;
+pub struct YadTrackingRpcContext {
+    scope: Arc<Impl<ScopeState>>
+}
 
 impl YadTrackingRpcContext {
+    pub fn new(scope: Arc<Impl<ScopeState>>) -> Self {
+        YadTrackingRpcContext {scope} 
+    }
+
     pub fn module(self) -> YadTrackingRpcModule {
         self.into_rpc()
     }

@@ -8,8 +8,10 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 cacao = "0.3.2"
+objc_id = "0.1.1"
+objc-foundation = "0.1.1"
 async-std = { version = "1", features=["tokio1"] }
 salvo = "0.37"
-yad-mac-observer = { path = "../yad_mac_observer" }
 lazy_static = "1.4"
 flume = "0.10"
+chrono = {workspace = true}

@@ -3,6 +3,28 @@
 version = 3
 
 [[package]]
+name = "acid-store"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc6c3408b24fb363ec2ee43c8bc18c1d9887e1d98ef5d7aaa1244bc5da57ab1f"
+dependencies = [
+ "anyhow",
+ "bitflags",
+ "blake3",
+ "cdchunking",
+ "digest 0.10.6",
+ "once_cell",
+ "rmp",
+ "rmp-serde 0.14.4",
+ "secrecy",
+ "serde",
+ "static_assertions",
+ "thiserror",
+ "uuid 1.2.2",
+ "weak-table",
+]
+
+[[package]]
 name = "addr"
 version = "0.15.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -163,6 +185,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrayref"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4c527152e37cf757a3f78aae5a06fbeefdb07ccc535c980a3208ee3060dd544"
+
+[[package]]
 name = "arrayvec"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -315,9 +343,9 @@ checksum = "7a40729d2133846d9ed0ea60a8b9541bccddab49cd30f0715a1da672fe9a2524"
 
 [[package]]
 name = "async-trait"
-version = "0.1.61"
+version = "0.1.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "705339e0e4a9690e2908d2b3d049d85682cf19fbd5782494498fbf7003a6a282"
+checksum = "eff18d764974428cf3a9328e23fc5c986f5fbed46e6cd4cdf42544df5d297ec1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -505,6 +533,20 @@ version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "46502ad458c9a52b69d4d4d32775c788b7a1b85e8bc9d482d92250fc0e3f8efe"
 dependencies = [
+ "digest 0.10.6",
+]
+
+[[package]]
+name = "blake3"
+version = "1.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42ae2468a89544a466886840aa467a25b766499f4f04bf7d9fcd10ecee9fccef"
+dependencies = [
+ "arrayref",
+ "arrayvec 0.7.2",
+ "cc",
+ "cfg-if 1.0.0",
+ "constant_time_eq",
  "digest 0.10.6",
 ]
 
@@ -749,6 +791,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cdchunking"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb66a0c6475bd0a1240467b757df26b766bcfc6a4dac938c80adeb2a196d086f"
+
+[[package]]
 name = "cexpr"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -884,37 +932,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cocoa"
-version = "0.24.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f425db7937052c684daec3bd6375c8abe2d146dca4b8b143d6db777c39138f3a"
-dependencies = [
- "bitflags",
- "block",
- "cocoa-foundation",
- "core-foundation",
- "core-graphics",
- "foreign-types",
- "libc",
- "objc",
-]
-
-[[package]]
-name = "cocoa-foundation"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ade49b65d560ca58c403a479bb396592b155c0185eada742ee323d1d68d6318"
-dependencies = [
- "bitflags",
- "block",
- "core-foundation",
- "core-graphics-types",
- "foreign-types",
- "libc",
- "objc",
-]
-
-[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -938,6 +955,12 @@ name = "const_fn"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbdcdcb6d86f71c5e97409ad45898af11cbc995b4ee8112d59095a28d376c935"
+
+[[package]]
+name = "constant_time_eq"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3ad85c1f65dc7b37604eb0e89748faf0b9653065f2a8ef69f96a687ec1e9279"
 
 [[package]]
 name = "convert_case"
@@ -1388,6 +1411,37 @@ checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
+]
+
+[[package]]
+name = "derive_builder"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d67778784b508018359cbc8696edb3db78160bab2c2a28ba7f56ef6932997f8"
+dependencies = [
+ "derive_builder_macro",
+]
+
+[[package]]
+name = "derive_builder_core"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c11bdc11a0c47bc7d37d582b5285da6849c96681023680b906673c5707af7b0f"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "derive_builder_macro"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebcda35c7a396850a55ffeac740804b40ffec779b98fffbb1738f4033f0ee79e"
+dependencies = [
+ "derive_builder_core",
  "syn",
 ]
 
@@ -3821,6 +3875,17 @@ dependencies = [
 
 [[package]]
 name = "rmp-serde"
+version = "0.14.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ce7d70c926fe472aed493b902010bccc17fa9f7284145cb8772fd22fdb052d8"
+dependencies = [
+ "byteorder",
+ "rmp",
+ "serde",
+]
+
+[[package]]
+name = "rmp-serde"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c5b13be192e0220b8afb7222aa5813cb62cc269ebb5cac346ca6487681d2913e"
@@ -4162,6 +4227,15 @@ name = "seahash"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
+
+[[package]]
+name = "secrecy"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bd1c54ea06cfd2f6b63219704de0b9b4f72dcc2b8fdef820be6cd799780e91e"
+dependencies = [
+ "zeroize",
+]
 
 [[package]]
 name = "security-framework"
@@ -4711,7 +4785,7 @@ dependencies = [
  "pbkdf2",
  "rand 0.8.5",
  "regex",
- "rmp-serde",
+ "rmp-serde 1.1.1",
  "rocksdb",
  "rquickjs",
  "scrypt",
@@ -5461,6 +5535,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c38c045535d93ec4f0b4defec448e4291638ee608530863b1e2ba115d4fff7f"
 
 [[package]]
+name = "weak-table"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78e37715e810547b2ae9b6980b25bef319cb779d6c42faa8010ba47e83178113"
+
+[[package]]
 name = "web-sys"
 version = "0.3.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5619,34 +5699,32 @@ dependencies = [
  "anyhow",
  "async-std",
  "cacao",
- "flume 0.10.14",
- "lazy_static",
- "salvo",
- "yad-mac-observer",
-]
-
-[[package]]
-name = "yad-mac-observer"
-version = "0.1.0"
-dependencies = [
- "cacao",
  "chrono",
- "cocoa",
  "flume 0.10.14",
  "lazy_static",
- "objc",
  "objc-foundation",
  "objc_id",
- "serde",
+ "salvo",
 ]
 
 [[package]]
-name = "yad-tracking-scope"
+name = "yad-net"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "jsonrpsee",
+ "salvo",
+]
+
+[[package]]
+name = "yad-scope-tracking"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-std",
  "async-trait",
+ "chrono",
  "entrait",
  "jsonrpsee",
  "reqwest",
@@ -5655,6 +5733,24 @@ dependencies = [
  "serde",
  "thiserror",
  "unimock",
+ "yad-net",
+ "yad-storage",
+]
+
+[[package]]
+name = "yad-storage"
+version = "0.1.0"
+dependencies = [
+ "acid-store",
+ "anyhow",
+ "async-std",
+ "async-trait",
+ "derive_builder",
+ "entrait",
+ "serde",
+ "serde_json",
+ "surrealdb",
+ "thiserror",
 ]
 
 [[package]]

@@ -1,6 +1,4 @@
 use crate::app::YadAgentApp;
-// use crate::RUNTIME;
-use async_std::task::JoinHandle;
 use flume::{bounded, Receiver, Sender};
 use lazy_static::lazy_static;
 use salvo::prelude::*;
@@ -9,14 +7,12 @@ lazy_static! {
     static ref SHUTDOWN_CHANNEL: (Sender<()>, Receiver<()>) = bounded(1);
 }
 
-pub struct YadAgentServer {
-    handle: JoinHandle<()>,
-}
+pub struct YadAgentServer {}
 
 impl YadAgentServer {
     pub fn new() -> Self {
-        let handle = YadAgentApp::spawn(Self::init_server());
-        YadAgentServer { handle }
+        YadAgentApp::spawn(Self::init_server());
+        YadAgentServer {}
     }
 
     async fn init_server() {
@@ -34,8 +30,8 @@ impl YadAgentServer {
         server.await;
     }
 
-    pub fn shutdown() {
-        SHUTDOWN_CHANNEL.0.send_async(());
+    pub fn shutdown(&self) {
+        let _ = async_std::task::block_on(SHUTDOWN_CHANNEL.0.send_async(()));
     }
 }
 

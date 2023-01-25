@@ -1,65 +1,112 @@
-use std::collections::BTreeMap;
-
-use entrait::entrait;
-use serde_json::{from_value, to_value};
+use async_trait::async_trait;
+use serde::{Serialize, de::DeserializeOwned};
 use surrealdb::sql::Value;
 
-use super::{database::Query, persistent::Persistent, utils::Parse, GetDb};
+use crate::{Database, database::Query, utils::Parse};
 
-#[entrait(pub GetEntity)]
-pub async fn get_entity(deps: &impl GetDb, id: String) -> anyhow::Result<Persistent> {
-    let db = deps.get_db();
-    let query: Query = "select * from $identity;;".into();
 
-    let identity = Value::parse(id.as_str());
+pub trait Entity: Serialize + DeserializeOwned {
+    fn id(&self) -> Option<String>;
 
-    let identity_entry = ("identity".to_string(), identity);
-    let vars = BTreeMap::from([identity_entry]);
+    fn collection() -> String;
 
-    let mut res = db.execute(query, Some(vars)).await.unwrap();
-    let res = res.remove(0);
-    let res = res.result;
-    let mut res = from_value::<Vec<serde_json::Value>>(to_value(res)?)?;
-    let res = res.remove(0);
-    Ok(Persistent::from_raw(id, res))
+    fn reference_from(id: String) -> EntityRef {
+        EntityRef(Self::collection(), id)
+    }
+
+    fn reference(&self) -> Option<EntityRef> {
+        self.id().map(|v| EntityRef(Self::collection(), v))
+    }
 }
 
-#[entrait(pub CreateEntity)]
-pub async fn create_entity(deps: &impl GetDb, entity: Persistent) -> anyhow::Result<Persistent> {
-    let db = deps.get_db();
-    let query: Query = "create $identity content $content;".into();
+pub struct EntityRef(String,String);
 
-    let identity = Value::parse(entity.id().as_str());
-    let content = Value::parse(entity.to_string()?.as_str());
+impl EntityRef {
+    pub fn id(&self) -> &str {
+        self.1.as_str()
+    }
 
-    let identity_entry = ("identity".to_string(), identity);
-    let content_entry = ("content".to_string(), content);
-    let vars = BTreeMap::from([identity_entry, content_entry]);
-
-    let mut res = db.execute(query, Some(vars)).await.unwrap();
-    let res = res.remove(0);
-    let res = res.result;
-    let mut res = from_value::<Vec<serde_json::Value>>(to_value(res)?)?;
-    let res = res.remove(0);
-    Ok(entity.with_value(res))
+    pub fn collection(&self) -> &str {
+        self.0.as_str()
+    }
 }
 
-#[entrait(pub UpdateEntity)]
-pub async fn update_entity(deps: &impl GetDb, entity: Persistent) -> anyhow::Result<Persistent> {
-    let db = deps.get_db();
-    let query: Query = "update $identity content $content;".into();
+#[async_trait::async_trait(?Send)]
+pub trait PersistentEntity {
+    async fn create(&self,db: &Database);
+    async fn upsert(&self,db: &Database);
+}
 
-    let identity = Value::parse(entity.id().as_str());
-    let content = Value::parse(entity.to_string()?.as_str());
+#[async_trait::async_trait(?Send)]
+impl<T> PersistentEntity for T where T: Entity {
+    async fn create(&self, db: &Database) {
+        let id = self.id();
+        if id.is_some() {
+            return;
+        }
+        let sql: Query = Query::from("CREATE type::thing($table, $id) CONTENT $data;");
+        let vars = crate::vars! {
+            String::from("table") => Value::from(T::collection()),
+            String::from("id") => Value::from(self.id().unwrap_or(Database::next_id().to_raw())),
+            String::from("data") => Value::parse(serde_json::to_string(self).unwrap().as_str()),
+        };
+        db.execute(sql, Some(vars)).await.unwrap();
+    }
 
-    let identity_entry = ("identity".to_string(), identity);
-    let content_entry = ("content".to_string(), content);
-    let vars = BTreeMap::from([identity_entry, content_entry]);
+    async fn upsert(&self,db: &Database) {
+        let table = T::collection();
+        let sql = Query::from(format!("INSERT INTO {} $data;", table).as_str());
+        let vars = crate::vars! {
+            String::from("data") => Value::parse(serde_json::to_string(self).unwrap().as_str()),
+        };
+        db.execute(sql, Some(vars)).await.unwrap();
+    }
+}
 
-    let mut res = db.execute(query, Some(vars)).await.unwrap();
-    let res = res.remove(0);
-    let res = res.result;
-    let mut res = from_value::<Vec<serde_json::Value>>(to_value(res)?)?;
-    let res = res.remove(0);
-    Ok(entity.with_value(res))
+#[cfg(test)]
+mod tests {
+    use serde::{Serialize, Deserialize};
+
+    use crate::{Entity, Database, PersistentEntity, database::Query};
+
+    #[derive(Debug, Default, Serialize, Deserialize)]
+    struct Someth {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        count: i32,
+    }
+
+    impl Entity for Someth {
+        fn id(&self) -> Option<String> {
+            self.id.clone()
+        }
+
+        fn collection() -> String {
+            String::from("someth")
+        }
+    }
+
+    #[async_std::test]
+    async fn test_create() {
+        let db = Database::new("memory", None, None).await.unwrap();
+        let ent = Someth{id: Some("1".into()), count: 0};
+        ent.create(&db).await;
+
+        let ent = Someth{id: None, count: 0};
+        ent.create(&db).await;
+        let res = db.execute(Query::from("select * from someth;"), None).await.unwrap();
+        dbg!(&res);
+    }
+
+    #[async_std::test]
+    async fn test_upsert() {
+        let db = Database::new("memory", None, None).await.unwrap();
+        let ent = Someth{id: Some("1".into()), count: 0};
+        ent.upsert(&db).await;
+
+        let ent = Someth{id: None, count: 0};
+        ent.upsert(&db).await;
+        let res = db.execute(Query::from("select * from someth;"), None).await.unwrap();
+        dbg!(&res);
+    }
 }

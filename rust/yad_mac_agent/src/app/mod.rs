@@ -1,12 +1,15 @@
+mod event;
+mod observer;
 mod server;
 
+use crate::app::event::MacObservedEvent;
 use crate::app::server::YadAgentServer;
 use async_std::task::JoinHandle;
 use cacao::appkit::*;
-use lazy_static::lazy_static;
+use cacao::notification_center::Dispatcher;
+use observer::MacEventObserver;
 use std::cell::RefCell;
 use std::future::Future;
-use yad_mac_observer::MacEventObserver;
 
 pub struct YadAgentApp {
     observer: RefCell<MacEventObserver>,
@@ -37,5 +40,14 @@ impl AppDelegate for YadAgentApp {
 
     fn will_terminate(&self) {
         self.observer.borrow_mut().stop();
+        self.server.shutdown();
+    }
+}
+
+impl Dispatcher for YadAgentApp {
+    type Message = MacObservedEvent;
+
+    fn on_ui_message(&self, message: Self::Message) {
+        dbg!(&message);
     }
 }

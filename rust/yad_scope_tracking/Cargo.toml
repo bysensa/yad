@@ -1,5 +1,5 @@
 [package]
-name = "yad-tracking-scope"
+name = "yad-scope-tracking"
 version = "0.1.0"
 edition = "2021"
 
@@ -17,6 +17,8 @@ rlink = "0.6"
 serde = "1"
 thiserror = "1.0.38"
 yad-net = {workspace = true}
+yad-storage = {workspace = true}
+chrono = "0.4.23"
 
 [dev-dependencies]
 reqwest = "0.11.13"
