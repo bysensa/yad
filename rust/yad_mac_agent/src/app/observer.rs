@@ -1,3 +1,5 @@
+use cacao::appkit::AppDelegate;
+use cacao::notification_center::Dispatcher;
 use cocoa::base::{id, nil};
 use cocoa::foundation::NSString;
 use flume::*;
@@ -9,6 +11,8 @@ use objc_foundation::{INSObject, NSObject};
 use objc_id::Id;
 use std::ptr;
 use std::sync::Once;
+
+pub trait Observer: AppDelegate + Dispatcher<Message = MacObservedEvent> + Sized {}
 
 extern "C" {
     static NSWorkspaceDidActivateApplicationNotification: id;
@@ -165,7 +169,9 @@ impl MacEventObserverImpl {
                 chrono::Utc::now(),
             );
             let sender = EVENTS_CHANNEL.0.clone();
-            let _ = sender.send(event);
+            // let _ = sender.send(event);
+
+            cacao::appkit::App::<dyn Observer<Message = MacObservedEvent>, MacObservedEvent>::dispatch_main(event)
         }
     }
 

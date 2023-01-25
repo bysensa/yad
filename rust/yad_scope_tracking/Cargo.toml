@@ -8,14 +8,15 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.61"
 async-std = { version = "1", features=["tokio1", "attributes"] }
-jsonrpsee = { version = "0.16", features=["server", "macros"] }
-salvo = { version = "0.37.9", features=["affix"] }
+jsonrpsee = { workspace = true, features=["server", "macros"] }
+salvo = { workspace = true, features=["affix"] }
 anyhow = "1"
 entrait = "0.5"
 unimock = "0.4"
 rlink = "0.6"
 serde = "1"
 thiserror = "1.0.38"
+yad-net = {workspace = true}
 
 [dev-dependencies]
 reqwest = "0.11.13"
