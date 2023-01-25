@@ -1,0 +1,28 @@
+{
+  "name": "Мониторим переключение вкладок",
+  "description": "Расширение для мониторинга вкладок",
+  "version": "1.0",
+  "manifest_version": 3,
+  "permissions": ["tabs", "scripting", "notifications"],
+  "action": {
+    "default_icon": {
+      "16": "/images/get_started16.png",
+      "32": "/images/get_started32.png",
+      "48": "/images/get_started48.png",
+      "128": "/images/get_started128.png"
+    }
+  },
+  "icons": {
+    "16": "/images/get_started16.png",
+    "32": "/images/get_started32.png",
+    "48": "/images/get_started48.png",
+    "128": "/images/get_started128.png"
+  },
+  "host_permissions": [
+    "http://0.0.0.0:8000"
+  ],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  }
+}

@@ -33,16 +33,18 @@ impl EntityRef {
 
 #[async_trait::async_trait(?Send)]
 pub trait PersistentEntity {
-    async fn create(&self,db: &Database);
-    async fn upsert(&self,db: &Database);
+    async fn create(&self,db: &Database) -> anyhow::Result<()>;
+    async fn upsert(&self,db: &Database) -> anyhow::Result<()>;
+    async fn update(&self, db: &Database) -> anyhow::Result<()>;
+    async fn delete(&self, db: &Database) -> anyhow::Result<()>;
 }
 
 #[async_trait::async_trait(?Send)]
 impl<T> PersistentEntity for T where T: Entity {
-    async fn create(&self, db: &Database) {
+    async fn create(&self, db: &Database) -> anyhow::Result<()> {
         let id = self.id();
         if id.is_some() {
-            return;
+            return Ok(());
         }
         let sql: Query = Query::from("CREATE type::thing($table, $id) CONTENT $data;");
         let vars = crate::vars! {
@@ -50,16 +52,45 @@ impl<T> PersistentEntity for T where T: Entity {
             String::from("id") => Value::from(self.id().unwrap_or(Database::next_id().to_raw())),
             String::from("data") => Value::parse(serde_json::to_string(self).unwrap().as_str()),
         };
-        db.execute(sql, Some(vars)).await.unwrap();
+        db.execute(sql, Some(vars)).await?;
+        Ok(())
     }
 
-    async fn upsert(&self,db: &Database) {
+    async fn upsert(&self,db: &Database) -> anyhow::Result<()> {
         let table = T::collection();
         let sql = Query::from(format!("INSERT INTO {} $data;", table).as_str());
         let vars = crate::vars! {
             String::from("data") => Value::parse(serde_json::to_string(self).unwrap().as_str()),
         };
-        db.execute(sql, Some(vars)).await.unwrap();
+        db.execute(sql, Some(vars)).await?;
+        Ok(())
+    }
+
+    async fn update(&self, db: &Database) -> anyhow::Result<()> {
+        if self.id().is_none() {
+            return Ok(());
+        }
+        let sql = Query::from("UPDATE type::thing($table, $id) CONTENT $data");
+        let vars = crate::vars! {
+            String::from("table") => Value::from(T::collection()),
+            String::from("id") => Value::from(self.id().unwrap()),
+            String::from("data") => Value::parse(serde_json::to_string(self).unwrap().as_str()),
+        };
+        db.execute(sql, Some(vars)).await?;
+        Ok(())
+    }
+
+    async fn delete(&self, db: &Database) -> anyhow::Result<()> {
+        if self.id().is_none() {
+            return Ok(());
+        }
+        let sql = Query::from("DELETE type::thing($table, $id)");
+        let vars = crate::vars! {
+            String::from("table") => Value::from(T::collection()),
+            String::from("id") => Value::from(self.id().unwrap()),
+        };
+        db.execute(sql, Some(vars)).await?;
+        Ok(())
     }
 }
 
@@ -90,10 +121,10 @@ mod tests {
     async fn test_create() {
         let db = Database::new("memory", None, None).await.unwrap();
         let ent = Someth{id: Some("1".into()), count: 0};
-        ent.create(&db).await;
+        ent.create(&db).await.unwrap();
 
         let ent = Someth{id: None, count: 0};
-        ent.create(&db).await;
+        ent.create(&db).await.unwrap();
         let res = db.execute(Query::from("select * from someth;"), None).await.unwrap();
         dbg!(&res);
     }
@@ -102,10 +133,34 @@ mod tests {
     async fn test_upsert() {
         let db = Database::new("memory", None, None).await.unwrap();
         let ent = Someth{id: Some("1".into()), count: 0};
-        ent.upsert(&db).await;
+        ent.upsert(&db).await.unwrap();
 
         let ent = Someth{id: None, count: 0};
-        ent.upsert(&db).await;
+        ent.upsert(&db).await.unwrap();
+        let res = db.execute(Query::from("select * from someth;"), None).await.unwrap();
+        dbg!(&res);
+    }
+
+    #[async_std::test]
+    async fn test_update() {
+        let db = Database::new("memory", None, None).await.unwrap();
+        let ent = Someth{id: Some("1".into()), count: 0};
+        ent.create(&db).await.unwrap();
+
+        let ent = Someth{id: Some("1".into()), count: 1};
+        ent.update(&db).await.unwrap();
+        let res = db.execute(Query::from("select * from someth;"), None).await.unwrap();
+        dbg!(&res);
+    }
+
+    #[async_std::test]
+    async fn test_delete() {
+        let db = Database::new("memory", None, None).await.unwrap();
+        let ent = Someth{id: Some("1".into()), count: 0};
+        ent.create(&db).await.unwrap();
+
+        let ent = Someth{id: Some("1".into()), count: 1};
+        ent.delete(&db).await.unwrap();
         let res = db.execute(Query::from("select * from someth;"), None).await.unwrap();
         dbg!(&res);
     }
