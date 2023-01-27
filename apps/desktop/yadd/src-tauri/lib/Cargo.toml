@@ -1,0 +1,26 @@
+[package]
+name = "lib"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+entrait = {version = "0.5.2", features = ["use-boxed-futures"]}  
+anyhow = "1"
+thiserror = "1"
+serde = {version = "1", features = ["derive"]}
+serde_json = "1"
+async-trait = "0.1.63"
+surrealdb = "1.0.0-beta.8"
+messages = { version = "0.3.1", features = ["runtime-async-std"] , default-features = false}
+async-std = {version = "1.12", features = ["attributes", "tokio1"]} 
+
+# datetime
+chrono = "0.4.1"
+
+# objc
+objc = "0.2.7"
+objc_id = "0.1.1"
+objc-foundation = "0.1.1"
+cacao = "0.3.2"
